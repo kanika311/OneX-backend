@@ -33,6 +33,6 @@ export const imageUpload = multer({
 });
 
 export function publicUploadUrl(filename) {
-  const base = process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || 5000}`;
+  const base = process.env.API_PUBLIC_URL;
   return `${base.replace(/\/$/, "")}/uploads/${filename}`;
 }
