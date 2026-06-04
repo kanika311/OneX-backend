@@ -7,7 +7,10 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node src/server.js",
-    "seed": "node src/seed/seed.js"
+    "seed": "node src/seed/seed.js",
+    "sync-offers": "node src/seed/sync-membership-offers.js",
+    "fix-offers": "node src/seed/fix-membership-prices.js",
+    "create-admin": "node src/seed/create-admin.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

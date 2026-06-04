@@ -10,9 +10,8 @@ const router = Router();
 router.post(
   "/register",
   [
-    body("name").trim().notEmpty(),
-    body("email").isEmail(),
-    body("password").isLength({ min: 6 }),
+    body("name").trim().notEmpty().withMessage("Name is required"),
+    body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
     validate,
   ],
   asyncHandler(auth.register),
@@ -20,7 +19,7 @@ router.post(
 
 router.post(
   "/login",
-  [body("email").isEmail(), body("password").notEmpty(), validate],
+  [body("password").notEmpty().withMessage("Password is required"), validate],
   asyncHandler(auth.login),
 );
 

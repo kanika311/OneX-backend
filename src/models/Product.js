@@ -4,7 +4,7 @@ const faqSchema = new mongoose.Schema({ q: String, a: String }, { _id: false });
 
 const productSchema = new mongoose.Schema(
   {
-    slug: { type: String, required: true, trim: true },
+    slug: { type: String, required: true, trim: true, unique: true, lowercase: true },
     domain: { type: String, enum: ["cyber", "physio"], required: true },
     category: { type: String, enum: ["courses", "services", "therapy"], required: true },
     title: { type: String, required: true, trim: true },

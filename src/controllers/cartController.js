@@ -1,18 +1,25 @@
 import mongoose from "mongoose";
 import { Cart } from "../models/Cart.js";
 import { Product } from "../models/Product.js";
-import { ApiError, cartKeyForProduct, productOfferingId } from "../utils/helpers.js";
+import {
+  ApiError,
+  cartKeyForProduct,
+  catalogCartKey,
+  parseOfferingPath,
+  productOfferingId,
+} from "../utils/helpers.js";
 
 async function resolveProduct(productId) {
-  if (mongoose.Types.ObjectId.isValid(productId)) {
-    const p = await Product.findOne({ _id: productId, active: true });
+  const key = String(productId ?? "").trim();
+  if (mongoose.Types.ObjectId.isValid(key)) {
+    const p = await Product.findOne({ _id: key, active: true });
     if (p) return p;
   }
-  if (productId.includes("/")) {
-    const [domain, category, slug] = productId.split("/");
+  if (key.includes("/")) {
+    const [domain, category, slug] = key.split("/");
     return Product.findOne({ domain, category, slug, active: true });
   }
-  return null;
+  return Product.findOne({ slug: key.toLowerCase(), active: true });
 }
 
 async function getOrCreateCart(userId) {
@@ -27,10 +34,10 @@ async function enrichCart(cart) {
   for (const item of cart.items) {
     const product = await resolveProduct(item.productId);
     if (!product) continue;
-    const lineTotal = product.price * item.quantity;
-    subtotal += lineTotal;
-    enriched.push({
+    const cartKey = cartKeyForProduct(product);
+    const row = {
       ...item.toObject(),
+      cartKey,
       product: {
         offeringId: productOfferingId(product),
         title: product.title,
@@ -40,31 +47,64 @@ async function enrichCart(cart) {
         category: product.category,
         slug: product.slug,
       },
-      lineTotal,
-    });
+      lineTotal: product.price * item.quantity,
+    };
+    subtotal += row.lineTotal;
+    enriched.push(row);
   }
   return { items: enriched, subtotal, count: enriched.reduce((n, i) => n + i.quantity, 0) };
 }
 
+async function pruneCartItems(cart) {
+  const kept = [];
+  for (const item of cart.items) {
+    const product = await resolveProduct(item.productId);
+    if (!product) continue;
+    kept.push({
+      productId: productOfferingId(product),
+      cartKey: cartKeyForProduct(product),
+      type: product.category === "courses" ? "course" : "service",
+      quantity: item.quantity || 1,
+    });
+  }
+  if (kept.length !== cart.items.length) {
+    cart.items = kept;
+    await cart.save();
+  }
+  return changed;
+}
+
 export async function getCart(req, res) {
   const cart = await getOrCreateCart(req.user._id);
+  await pruneCartItems(cart);
   res.json({ success: true, cart: await enrichCart(cart) });
 }
 
 export async function addToCart(req, res) {
   const { productId, quantity = 1 } = req.body;
   const product = await resolveProduct(productId);
-  if (!product) throw new ApiError(404, "Product not found");
+  let offeringId;
+  let cartKey;
+  let type;
+  if (product) {
+    offeringId = productOfferingId(product);
+    cartKey = cartKeyForProduct(product);
+    type = product.category === "courses" ? "course" : "service";
+  } else {
+    const catalog = parseOfferingPath(productId);
+    if (!catalog) throw new ApiError(404, "Product not found");
+    offeringId = catalog.offeringId;
+    cartKey = catalogCartKey(offeringId);
+    type = catalog.category === "courses" ? "course" : "service";
+  }
   const cart = await getOrCreateCart(req.user._id);
-  const offeringId = productOfferingId(product);
-  const cartKey = cartKeyForProduct(product);
   const existing = cart.items.find((i) => i.cartKey === cartKey);
   if (existing) existing.quantity += Number(quantity);
   else {
     cart.items.push({
       productId: offeringId,
       cartKey,
-      type: product.category === "courses" ? "course" : "service",
+      type,
       quantity: Number(quantity),
     });
   }
@@ -79,17 +119,49 @@ export async function removeFromCart(req, res) {
   res.json({ success: true, cart: await enrichCart(cart) });
 }
 
+/** Empty cart after successful checkout */
+export async function clearCart(req, res) {
+  const cart = await getOrCreateCart(req.user._id);
+  cart.items = [];
+  await cart.save();
+  res.json({ success: true, cart: await enrichCart(cart) });
+}
+
+/** Remove only items that were paid for (cartKeys in body) */
+export async function removeCartItems(req, res) {
+  const keys = Array.isArray(req.body.cartKeys) ? req.body.cartKeys.map(String) : [];
+  if (keys.length === 0) {
+    return clearCart(req, res);
+  }
+  const cart = await getOrCreateCart(req.user._id);
+  const drop = new Set(keys);
+  cart.items = cart.items.filter((i) => !drop.has(i.cartKey));
+  await cart.save();
+  res.json({ success: true, cart: await enrichCart(cart) });
+}
+
 export async function syncCart(req, res) {
   const cart = await getOrCreateCart(req.user._id);
   cart.items = [];
   for (const entry of req.body.items || []) {
-    const pid = entry.productId || entry.offeringId;
+    const pid = entry.productId || entry.offeringId || entry.cartKey?.split(":").slice(1).join(":");
     const product = await resolveProduct(pid);
-    if (!product) continue;
+    if (product) {
+      cart.items.push({
+        productId: productOfferingId(product),
+        cartKey: cartKeyForProduct(product),
+        type: product.category === "courses" ? "course" : "service",
+        quantity: entry.quantity || 1,
+      });
+      continue;
+    }
+    const catalog = parseOfferingPath(pid);
+    if (!catalog) continue;
+    const offeringId = catalog.offeringId;
     cart.items.push({
-      productId: productOfferingId(product),
-      cartKey: cartKeyForProduct(product),
-      type: product.category === "courses" ? "course" : "service",
+      productId: offeringId,
+      cartKey: entry.cartKey || catalogCartKey(offeringId),
+      type: catalog.category === "courses" ? "course" : "service",
       quantity: entry.quantity || 1,
     });
   }

@@ -1,8 +1,10 @@
 import "dotenv/config";
+import mongoose from "mongoose";
 import { connectDB } from "../config/db.js";
 import { Product } from "../models/Product.js";
 import { Offer } from "../models/Offer.js";
 import { User } from "../models/User.js";
+import { buildMembershipDoc } from "../utils/membershipOfferDoc.js";
 
 const sampleProducts = [
   {
@@ -52,19 +54,55 @@ const sampleProducts = [
   },
 ];
 
+const membershipBenefits = [
+  "Access to exclusive member rewards",
+  "Priority booking access",
+  "Insider discounts",
+  "Special promotional offers",
+  "Community member benefits",
+];
+
 const sampleOffers = [
   {
-    slug: "founding-member",
-    title: "Founding Member",
-    subtitle: "Join the first 100 members",
-    description: "Unlock premium benefits and exclusive rewards.",
-    discountLabel: "From $5",
-    discountPercent: 90,
-    promoCode: "FOUNDING100",
-    featured: true,
+    slug: "silver-membership",
+    offerType: "membership",
+    title: "Silver",
+    subtitle: "Premium wellness & cyber access",
+    cardTitle: "Founding Member",
+    price: 1500,
+    feeLabel: "One-time fee",
+    benefits: membershipBenefits,
     sortOrder: 1,
     active: true,
-    ctaText: "Become a member",
+    ctaText: "Get Your Membership Card",
+    ctaLink: "/contact",
+  },
+  {
+    slug: "gold-membership",
+    offerType: "membership",
+    title: "Gold",
+    subtitle: "Premium wellness & cyber access",
+    cardTitle: "Founding Member",
+    price: 2500,
+    feeLabel: "One-time fee",
+    benefits: membershipBenefits,
+    sortOrder: 2,
+    active: true,
+    ctaText: "Get Your Membership Card",
+    ctaLink: "/contact",
+  },
+  {
+    slug: "diamond-membership",
+    offerType: "membership",
+    title: "Diamond",
+    subtitle: "Premium wellness & cyber access",
+    cardTitle: "Founding Member",
+    price: 5000,
+    feeLabel: "One-time fee",
+    benefits: membershipBenefits,
+    sortOrder: 3,
+    active: true,
+    ctaText: "Get Your Membership Card",
     ctaLink: "/contact",
   },
 ];
@@ -74,7 +112,12 @@ async function seed() {
   await Product.deleteMany({});
   await Product.insertMany(sampleProducts);
   await Offer.deleteMany({});
-  await Offer.insertMany(sampleOffers);
+  const offerCol = mongoose.connection.collection("offers");
+  const now = new Date();
+  for (const o of sampleOffers) {
+    const doc = buildMembershipDoc({ ...o, description: o.subtitle });
+    await offerCol.insertOne({ ...doc, createdAt: now, updatedAt: now });
+  }
 
   const email = process.env.ADMIN_EMAIL || "admin@1x-dr-ayesha.com";
   const password = process.env.ADMIN_PASSWORD || "Admin@12345";

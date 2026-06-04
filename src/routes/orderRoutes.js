@@ -17,11 +17,19 @@ router.post(
     body("items").isArray({ min: 1 }).withMessage("Cart is empty"),
     body("items.*.cartKey").notEmpty(),
     body("items.*.title").notEmpty(),
-    body("items.*.price").isNumeric(),
-    body("items.*.type").isIn(["course", "service"]),
+    body("items.*.price")
+      .custom((v) => {
+        const n = Number(v);
+        return Number.isFinite(n) && n >= 0;
+      })
+      .withMessage("Valid item price is required"),
+    body("items.*.type").isIn(["course", "service", "membership"]),
   ],
   validate,
   asyncHandler(orders.createOrder),
 );
+
+router.post("/:id/confirm-payment", asyncHandler(orders.submitOrderPayment));
+router.patch("/:id/payment-submitted", asyncHandler(orders.submitOrderPayment));
 
 export default router;

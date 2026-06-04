@@ -7,13 +7,26 @@ function formatProduct(p) {
   return { ...doc, offeringId: doc.offeringId || productOfferingId(doc), cartKey: cartKeyForProduct(doc) };
 }
 
+function normalizeSlug(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 async function findProduct(id) {
-  if (mongoose.Types.ObjectId.isValid(id)) {
-    const byId = await Product.findById(id);
+  const key = decodeURIComponent(String(id ?? "").trim());
+  if (mongoose.Types.ObjectId.isValid(key)) {
+    const byId = await Product.findById(key);
     if (byId) return byId;
   }
-  if (id.includes("/")) {
-    const [domain, category, slug] = id.split("/");
+  if (!key.includes("/")) {
+    const bySlug = await Product.findOne({ slug: normalizeSlug(key) || key });
+    if (bySlug) return bySlug;
+  }
+  if (key.includes("/")) {
+    const [domain, category, slug] = key.split("/");
     const byPath = await Product.findOne({ domain, category, slug });
     if (byPath) return byPath;
   }
@@ -42,13 +55,24 @@ export async function getProduct(req, res) {
 }
 
 export async function createProduct(req, res) {
-  const product = await Product.create(req.body);
+  const body = { ...req.body };
+  body.slug = normalizeSlug(body.slug) || normalizeSlug(body.title);
+  if (!body.slug) throw new ApiError(400, "Slug is required");
+  const taken = await Product.findOne({ slug: body.slug });
+  if (taken) throw new ApiError(409, "This slug is already used — choose another");
+  const product = await Product.create(body);
   res.status(201).json({ success: true, product: formatProduct(product) });
 }
 
 export async function updateProduct(req, res) {
   const product = await findProduct(req.params.id);
-  Object.assign(product, req.body);
+  const body = { ...req.body };
+  if (body.slug !== undefined) {
+    body.slug = normalizeSlug(body.slug) || product.slug;
+    const taken = await Product.findOne({ slug: body.slug, _id: { $ne: product._id } });
+    if (taken) throw new ApiError(409, "This slug is already used — choose another");
+  }
+  Object.assign(product, body);
   await product.save();
   res.json({ success: true, product: formatProduct(product) });
 }

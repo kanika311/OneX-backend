@@ -11,6 +11,7 @@ const router = Router();
 router.use(protect, adminOnly);
 router.get("/stats", asyncHandler(admin.dashboardStats));
 router.get("/customers", asyncHandler(orders.listCustomers));
+router.post("/customers/repair-phones", asyncHandler(orders.repairCustomerPhones));
 router.get("/orders", asyncHandler(orders.listOrders));
 router.get("/orders/:id", asyncHandler(orders.getOrder));
 router.patch("/orders/:id", asyncHandler(orders.updateOrderStatus));
