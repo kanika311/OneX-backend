@@ -13,8 +13,10 @@ const origins = (process.env.CORS_ORIGIN || "http://localhost:3000,http://localh
   .split(",")
   .map((o) => o.trim());
 
-app.use(cors({ origin: origins, credentials: true }));
-app.use(express.json({ limit: "2mb" }));
+app.use(cors({
+  origin: true,
+  credentials: true
+}));app.use(express.json({ limit: "2mb" }));
 app.use("/uploads", express.static(UPLOAD_DIR));
 
 app.use("/api", routes);
