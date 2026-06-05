@@ -1,9 +1,12 @@
 import mongoose from "mongoose";
 import { Product } from "../models/Product.js";
 import { ApiError, cartKeyForProduct, productOfferingId } from "../utils/helpers.js";
+import { normalizeImageForStorage, resolveMediaUrl } from "../utils/mediaUrl.js";
 
-function formatProduct(p) {
-  const doc = p.toObject ? p.toObject({ virtuals: true }) : p;
+/** Public API: full image URL. DB keeps /uploads/... only. */
+function formatProduct(p, req) {
+  const doc = p.toObject ? p.toObject({ virtuals: true }) : { ...p };
+  if (doc.image) doc.image = resolveMediaUrl(doc.image, req);
   return { ...doc, offeringId: doc.offeringId || productOfferingId(doc), cartKey: cartKeyForProduct(doc) };
 }
 
@@ -46,27 +49,29 @@ export async function listProducts(req, res) {
     Product.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
     Product.countDocuments(filter),
   ]);
-  res.json({ success: true, total, products: items.map(formatProduct) });
+  res.json({ success: true, total, products: items.map((p) => formatProduct(p, req)) });
 }
 
 export async function getProduct(req, res) {
   const product = await findProduct(req.params.id);
-  res.json({ success: true, product: formatProduct(product) });
+  res.json({ success: true, product: formatProduct(product, req) });
 }
 
 export async function createProduct(req, res) {
   const body = { ...req.body };
+  if (body.image) body.image = normalizeImageForStorage(body.image);
   body.slug = normalizeSlug(body.slug) || normalizeSlug(body.title);
   if (!body.slug) throw new ApiError(400, "Slug is required");
   const taken = await Product.findOne({ slug: body.slug });
   if (taken) throw new ApiError(409, "This slug is already used — choose another");
   const product = await Product.create(body);
-  res.status(201).json({ success: true, product: formatProduct(product) });
+  res.status(201).json({ success: true, product: formatProduct(product, req) });
 }
 
 export async function updateProduct(req, res) {
   const product = await findProduct(req.params.id);
   const body = { ...req.body };
+  if (body.image !== undefined) body.image = normalizeImageForStorage(body.image);
   if (body.slug !== undefined) {
     body.slug = normalizeSlug(body.slug) || product.slug;
     const taken = await Product.findOne({ slug: body.slug, _id: { $ne: product._id } });
@@ -74,7 +79,7 @@ export async function updateProduct(req, res) {
   }
   Object.assign(product, body);
   await product.save();
-  res.json({ success: true, product: formatProduct(product) });
+  res.json({ success: true, product: formatProduct(product, req) });
 }
 
 export async function deleteProduct(req, res) {

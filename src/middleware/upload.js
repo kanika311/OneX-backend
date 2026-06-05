@@ -3,8 +3,17 @@ import path from "path";
 import { fileURLToPath } from "url";
 import multer from "multer";
 
+import { getPublicBaseUrl, publicUploadUrl as buildPublicUploadUrl } from "../utils/mediaUrl.js";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const UPLOAD_DIR = path.join(__dirname, "../../uploads");
+
+/** Override on VPS/Render persistent disk: e.g. /var/data/uploads */
+const configuredDir = process.env.UPLOAD_DIR?.trim();
+export const UPLOAD_DIR = configuredDir
+  ? path.isAbsolute(configuredDir)
+    ? configuredDir
+    : path.join(process.cwd(), configuredDir)
+  : path.join(__dirname, "../../uploads");
 
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -32,7 +41,9 @@ export const imageUpload = multer({
   },
 });
 
-export function publicUploadUrl(filename) {
-  const base = process.env.API_PUBLIC_URL;
-  return `${base.replace(/\/$/, "")}/uploads/${filename}`;
+/** @deprecated import from utils/mediaUrl.js — kept for backwards compatibility */
+export function publicUploadUrl(filename, req) {
+  return buildPublicUploadUrl(filename, req);
 }
+
+export { getPublicBaseUrl };

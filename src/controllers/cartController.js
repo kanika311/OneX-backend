@@ -8,6 +8,7 @@ import {
   parseOfferingPath,
   productOfferingId,
 } from "../utils/helpers.js";
+import { resolveMediaUrl } from "../utils/mediaUrl.js";
 
 async function resolveProduct(productId) {
   const key = String(productId ?? "").trim();
@@ -28,7 +29,7 @@ async function getOrCreateCart(userId) {
   return cart;
 }
 
-async function enrichCart(cart) {
+async function enrichCart(cart, req) {
   const enriched = [];
   let subtotal = 0;
   for (const item of cart.items) {
@@ -42,7 +43,7 @@ async function enrichCart(cart) {
         offeringId: productOfferingId(product),
         title: product.title,
         price: product.price,
-        image: product.image,
+        image: resolveMediaUrl(product.image, req),
         domain: product.domain,
         category: product.category,
         slug: product.slug,
@@ -77,7 +78,7 @@ async function pruneCartItems(cart) {
 export async function getCart(req, res) {
   const cart = await getOrCreateCart(req.user._id);
   await pruneCartItems(cart);
-  res.json({ success: true, cart: await enrichCart(cart) });
+  res.json({ success: true, cart: await enrichCart(cart, req) });
 }
 
 export async function addToCart(req, res) {
@@ -109,14 +110,14 @@ export async function addToCart(req, res) {
     });
   }
   await cart.save();
-  res.json({ success: true, cart: await enrichCart(cart) });
+  res.json({ success: true, cart: await enrichCart(cart, req) });
 }
 
 export async function removeFromCart(req, res) {
   const cart = await getOrCreateCart(req.user._id);
   cart.items = cart.items.filter((i) => i.cartKey !== req.params.cartKey);
   await cart.save();
-  res.json({ success: true, cart: await enrichCart(cart) });
+  res.json({ success: true, cart: await enrichCart(cart, req) });
 }
 
 /** Empty cart after successful checkout */
@@ -124,7 +125,7 @@ export async function clearCart(req, res) {
   const cart = await getOrCreateCart(req.user._id);
   cart.items = [];
   await cart.save();
-  res.json({ success: true, cart: await enrichCart(cart) });
+  res.json({ success: true, cart: await enrichCart(cart, req) });
 }
 
 /** Remove only items that were paid for (cartKeys in body) */
@@ -137,7 +138,7 @@ export async function removeCartItems(req, res) {
   const drop = new Set(keys);
   cart.items = cart.items.filter((i) => !drop.has(i.cartKey));
   await cart.save();
-  res.json({ success: true, cart: await enrichCart(cart) });
+  res.json({ success: true, cart: await enrichCart(cart, req) });
 }
 
 export async function syncCart(req, res) {
@@ -166,5 +167,5 @@ export async function syncCart(req, res) {
     });
   }
   await cart.save();
-  res.json({ success: true, cart: await enrichCart(cart) });
+  res.json({ success: true, cart: await enrichCart(cart, req) });
 }

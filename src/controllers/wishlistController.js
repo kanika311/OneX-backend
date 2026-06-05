@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { Wishlist } from "../models/Wishlist.js";
 import { Product } from "../models/Product.js";
 import { ApiError, parseOfferingPath, productOfferingId } from "../utils/helpers.js";
+import { resolveMediaUrl } from "../utils/mediaUrl.js";
 
 async function resolveProduct(productId) {
   const key = String(productId ?? "").trim();
@@ -22,7 +23,7 @@ async function getOrCreateWishlist(userId) {
   return list;
 }
 
-async function enrichWishlist(list) {
+async function enrichWishlist(list, req) {
   const products = [];
   for (const id of list.productIds) {
     const product = await resolveProduct(id);
@@ -31,7 +32,7 @@ async function enrichWishlist(list) {
       offeringId: productOfferingId(product),
       title: product.title,
       price: product.price,
-      image: product.image,
+      image: resolveMediaUrl(product.image, req),
       domain: product.domain,
       category: product.category,
       slug: product.slug,
@@ -44,7 +45,7 @@ async function enrichWishlist(list) {
 
 export async function getWishlist(req, res) {
   const list = await getOrCreateWishlist(req.user._id);
-  const products = await enrichWishlist(list);
+  const products = await enrichWishlist(list, req);
   const validIds = products.map((p) => p.offeringId);
   if (validIds.length !== list.productIds.length) {
     list.productIds = validIds;
@@ -66,14 +67,14 @@ export async function addToWishlist(req, res) {
   const list = await getOrCreateWishlist(req.user._id);
   if (!list.productIds.includes(offeringId)) list.productIds.push(offeringId);
   await list.save();
-  res.json({ success: true, wishlist: { productIds: list.productIds, products: await enrichWishlist(list) } });
+  res.json({ success: true, wishlist: { productIds: list.productIds, products: await enrichWishlist(list, req) } });
 }
 
 export async function removeFromWishlist(req, res) {
   const list = await getOrCreateWishlist(req.user._id);
   list.productIds = list.productIds.filter((id) => id !== req.params.productId);
   await list.save();
-  res.json({ success: true, wishlist: { productIds: list.productIds, products: await enrichWishlist(list) } });
+  res.json({ success: true, wishlist: { productIds: list.productIds, products: await enrichWishlist(list, req) } });
 }
 
 export async function syncWishlist(req, res) {
@@ -89,5 +90,5 @@ export async function syncWishlist(req, res) {
   }
   list.productIds = [...new Set(valid)];
   await list.save();
-  res.json({ success: true, wishlist: { productIds: list.productIds, products: await enrichWishlist(list) } });
+  res.json({ success: true, wishlist: { productIds: list.productIds, products: await enrichWishlist(list, req) } });
 }
