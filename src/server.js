@@ -13,19 +13,28 @@ const PORT = process.env.PORT || 5000;
 
 app.set("trust proxy", 1);
 
-const origins = (process.env.CORS_ORIGIN || "http://localhost:3000,http://localhost:3001")
-  .split(",")
-  .map((o) => o.trim())
-  .filter(Boolean);
+const corsEnv = process.env.CORS_ORIGIN || "http://localhost:3000,http://localhost:3001";
+const allowAllOrigins = corsEnv.trim() === "*";
+const allowedOrigins = allowAllOrigins
+  ? []
+  : corsEnv
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean);
 
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || origins.includes(origin) || process.env.NODE_ENV !== "production") {
+      if (!origin || allowAllOrigins || allowedOrigins.includes(origin)) {
         callback(null, true);
-      } else {
-        callback(null, origins.includes(origin));
+        return;
       }
+      // Allow Vercel preview + production deployments
+      if (/^https:\/\/.*\.vercel\.app$/i.test(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
     },
     credentials: true,
   }),
