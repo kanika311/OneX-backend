@@ -7,6 +7,7 @@ import cartRoutes from "./cartRoutes.js";
 import wishlistRoutes from "./wishlistRoutes.js";
 import orderRoutes from "./orderRoutes.js";
 import siteContentRoutes from "./siteContentRoutes.js";
+import testimonialRoutes from "./testimonialRoutes.js";
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.use("/admin", adminRoutes);
 router.use("/cart", cartRoutes);
 router.use("/wishlist", wishlistRoutes);
 router.use("/site-content", siteContentRoutes);
+router.use("/testimonials", testimonialRoutes);
 
 export default router;
