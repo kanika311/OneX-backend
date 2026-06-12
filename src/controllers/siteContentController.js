@@ -39,6 +39,15 @@ function normalizeAbout(about) {
   };
 }
 
+function normalizePayment(payment) {
+  if (!payment || typeof payment !== "object") return {};
+  return {
+    upiId: safeString(payment.upiId),
+    upiPayeeName: safeString(payment.upiPayeeName),
+    qrImage: safeString(payment.qrImage),
+  };
+}
+
 export async function getSiteContent(_req, res) {
   const doc = await SiteContent.findOne({ key: "default" }).lean();
   res.json({ success: true, content: doc || null });
@@ -50,6 +59,7 @@ export async function upsertSiteContent(req, res) {
   const update = {
     about: normalizeAbout(body.about),
     contact: normalizeContact(body.contact),
+    payment: normalizePayment(body.payment),
     privacy: normalizeLegal(body.privacy),
     terms: normalizeLegal(body.terms),
   };

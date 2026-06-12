@@ -40,12 +40,22 @@ const aboutSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const paymentSchema = new mongoose.Schema(
+  {
+    upiId: { type: String, default: "" },
+    upiPayeeName: { type: String, default: "" },
+    qrImage: { type: String, default: "" },
+  },
+  { _id: false },
+);
+
 const siteContentSchema = new mongoose.Schema(
   {
     /** singleton key */
     key: { type: String, default: "default", unique: true },
     about: { type: aboutSchema, default: () => ({}) },
     contact: { type: contactSchema, default: () => ({}) },
+    payment: { type: paymentSchema, default: () => ({}) },
     privacy: { type: legalDocSchema, default: () => ({}) },
     terms: { type: legalDocSchema, default: () => ({}) },
   },
