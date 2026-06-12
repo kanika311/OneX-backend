@@ -37,6 +37,7 @@ const orderSchema = new mongoose.Schema(
       default: "awaiting",
     },
     paymentSubmittedAt: { type: Date, default: null },
+    paymentReference: { type: String, default: "" },
     notes: { type: String, default: "" },
   },
   { timestamps: true },

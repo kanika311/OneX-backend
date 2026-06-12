@@ -9,6 +9,7 @@ import orderRoutes from "./orderRoutes.js";
 import siteContentRoutes from "./siteContentRoutes.js";
 import testimonialRoutes from "./testimonialRoutes.js";
 import contactInquiryRoutes from "./contactInquiryRoutes.js";
+import newsletterRoutes from "./newsletterRoutes.js";
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.use("/wishlist", wishlistRoutes);
 router.use("/site-content", siteContentRoutes);
 router.use("/testimonials", testimonialRoutes);
 router.use("/contact-inquiries", contactInquiryRoutes);
+router.use("/newsletter", newsletterRoutes);
 
 export default router;

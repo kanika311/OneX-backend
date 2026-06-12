@@ -30,10 +30,21 @@ const contactSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const aboutSchema = new mongoose.Schema(
+  {
+    storyParagraph1: { type: String, default: "" },
+    storyParagraph2: { type: String, default: "" },
+    visionTitle: { type: String, default: "Vision" },
+    visionText: { type: String, default: "" },
+  },
+  { _id: false },
+);
+
 const siteContentSchema = new mongoose.Schema(
   {
     /** singleton key */
     key: { type: String, default: "default", unique: true },
+    about: { type: aboutSchema, default: () => ({}) },
     contact: { type: contactSchema, default: () => ({}) },
     privacy: { type: legalDocSchema, default: () => ({}) },
     terms: { type: legalDocSchema, default: () => ({}) },

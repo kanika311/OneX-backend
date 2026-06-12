@@ -138,10 +138,35 @@ export async function submitOrderPayment(req, res) {
   if (order.status === "cancelled") {
     throw new ApiError(400, "This order was cancelled");
   }
+  if (order.paymentStatus === "confirmed") {
+    throw new ApiError(400, "Payment already confirmed for this order");
+  }
+
+  const paymentReference = String(req.body?.paymentReference ?? "").trim();
+  if (paymentReference.length < 4) {
+    throw new ApiError(400, "Enter your UPI transaction ID or reference number (at least 4 characters)");
+  }
+
+  order.paymentReference = paymentReference;
   order.paymentStatus = "submitted";
   order.paymentSubmittedAt = new Date();
   await order.save();
   res.json({ success: true, order: formatOrder(order) });
+}
+
+export async function listMyOrders(req, res) {
+  const orders = await Order.find({ user: req.user._id })
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .lean();
+
+  res.json({
+    success: true,
+    orders: orders.map((o) => ({
+      ...o,
+      itemCount: o.items?.reduce((n, i) => n + (i.quantity || 1), 0) ?? 0,
+    })),
+  });
 }
 
 export async function listCustomers(_req, res) {

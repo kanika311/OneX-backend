@@ -29,6 +29,16 @@ function normalizeContact(contact) {
   };
 }
 
+function normalizeAbout(about) {
+  if (!about || typeof about !== "object") return {};
+  return {
+    storyParagraph1: safeString(about.storyParagraph1),
+    storyParagraph2: safeString(about.storyParagraph2),
+    visionTitle: safeString(about.visionTitle) || "Vision",
+    visionText: safeString(about.visionText),
+  };
+}
+
 export async function getSiteContent(_req, res) {
   const doc = await SiteContent.findOne({ key: "default" }).lean();
   res.json({ success: true, content: doc || null });
@@ -38,6 +48,7 @@ export async function upsertSiteContent(req, res) {
   const body = req.body || {};
 
   const update = {
+    about: normalizeAbout(body.about),
     contact: normalizeContact(body.contact),
     privacy: normalizeLegal(body.privacy),
     terms: normalizeLegal(body.terms),
