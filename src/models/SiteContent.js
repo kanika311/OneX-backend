@@ -40,6 +40,25 @@ const aboutSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const founderSchema = new mongoose.Schema(
+  {
+    eyebrow: { type: String, default: "About the founder" },
+    title: { type: String, default: "" },
+    body: { type: String, default: "" },
+    image: { type: String, default: "" },
+  },
+  { _id: false },
+);
+
+const heroSlideSchema = new mongoose.Schema(
+  {
+    mediaType: { type: String, enum: ["image", "video"], default: "image" },
+    src: { type: String, default: "" },
+    alt: { type: String, default: "" },
+  },
+  { _id: false },
+);
+
 const paymentSchema = new mongoose.Schema(
   {
     upiId: { type: String, default: "" },
@@ -54,6 +73,8 @@ const siteContentSchema = new mongoose.Schema(
     /** singleton key */
     key: { type: String, default: "default", unique: true },
     about: { type: aboutSchema, default: () => ({}) },
+    founder: { type: founderSchema, default: () => ({}) },
+    homeHeroSlides: { type: [heroSlideSchema], default: [] },
     contact: { type: contactSchema, default: () => ({}) },
     payment: { type: paymentSchema, default: () => ({}) },
     privacy: { type: legalDocSchema, default: () => ({}) },

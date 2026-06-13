@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { asyncHandler } from "../utils/helpers.js";
 import { protect, adminOnly } from "../middleware/auth.js";
-import { imageUpload } from "../middleware/upload.js";
+import { imageUpload, videoUpload } from "../middleware/upload.js";
 import * as admin from "../controllers/adminController.js";
 import * as orders from "../controllers/orderController.js";
 import * as upload from "../controllers/uploadController.js";
@@ -17,6 +17,7 @@ router.get("/orders/:id", asyncHandler(orders.getOrder));
 router.patch("/orders/:id", asyncHandler(orders.updateOrderStatus));
 router.get("/media", asyncHandler(upload.listMedia));
 router.post("/upload", imageUpload.single("file"), asyncHandler(upload.uploadImage));
+router.post("/upload-video", videoUpload.single("file"), asyncHandler(upload.uploadVideo));
 router.delete("/media/:filename", asyncHandler(upload.deleteMedia));
 
 export default router;
