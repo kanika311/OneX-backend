@@ -11,6 +11,9 @@ export async function protect(req, _res, next) {
     const decoded = jwt.verify(header.split(" ")[1], process.env.JWT_SECRET);
     const user = await User.findById(decoded.id).select("-password");
     if (!user) return next(new ApiError(401, "User not found"));
+    if (user.isActive === false) {
+      return next(new ApiError(403, "Account deactivated"));
+    }
     req.user = user;
     next();
   } catch {
@@ -24,7 +27,7 @@ export async function optionalAuth(req, _res, next) {
   try {
     const decoded = jwt.verify(header.split(" ")[1], process.env.JWT_SECRET);
     const user = await User.findById(decoded.id).select("-password");
-    if (user) req.user = user;
+    if (user && user.isActive !== false) req.user = user;
   } catch {
     /* public */
   }
@@ -32,8 +35,15 @@ export async function optionalAuth(req, _res, next) {
 }
 
 export function adminOnly(req, _res, next) {
-  if (req.user?.role !== "admin") {
+  if (!["admin", "super_admin"].includes(req.user?.role)) {
     return next(new ApiError(403, "Admin access required"));
+  }
+  next();
+}
+
+export function superAdminOnly(req, _res, next) {
+  if (req.user?.role !== "super_admin") {
+    return next(new ApiError(403, "Super Admin access required"));
   }
   next();
 }

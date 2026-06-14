@@ -2,21 +2,36 @@ import "dotenv/config";
 import { connectDB } from "../config/db.js";
 import { User } from "../models/User.js";
 
-const email = process.env.ADMIN_EMAIL || "admin@1x-dr-ayesha.com";
-const password = process.env.ADMIN_PASSWORD || "Admin@12345";
+const name = process.env.SUPER_ADMIN_NAME || "Super Admin";
+const email = process.env.SUPER_ADMIN_EMAIL || "superadmin@1x-dr-ayesha.com";
+const phone = process.env.SUPER_ADMIN_PHONE || "9876543210";
+const password = process.env.SUPER_ADMIN_PASSWORD || "Super@12345";
 
 async function run() {
   await connectDB();
+
   let admin = await User.findOne({ email });
+
   if (!admin) {
-    admin = await User.create({ name: "Admin", email, password, role: "admin" });
-    console.log("Admin created:", email);
+    admin = await User.create({
+      name,
+      email,
+      number: phone,
+      password,
+      role: "super_admin",
+      isActive: true,
+    });
+    console.log("Super Admin created:", email);
   } else {
-    admin.role = "admin";
+    admin.name = name;
+    admin.number = phone;
+    admin.role = "super_admin";
+    admin.isActive = true;
     admin.password = password;
     await admin.save();
-    console.log("Admin updated:", email);
+    console.log("Super Admin updated:", email);
   }
+
   console.log("Sign in at http://localhost:3001/login");
   process.exit(0);
 }
