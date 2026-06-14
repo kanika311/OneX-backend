@@ -68,7 +68,8 @@ async function pruneCartItems(cart) {
       quantity: item.quantity || 1,
     });
   }
-  if (kept.length !== cart.items.length) {
+  const changed = kept.length !== cart.items.length;
+  if (changed) {
     cart.items = kept;
     await cart.save();
   }
