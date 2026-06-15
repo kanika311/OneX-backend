@@ -48,27 +48,6 @@ function normalizePayment(payment) {
   };
 }
 
-function normalizeFounder(founder) {
-  if (!founder || typeof founder !== "object") return {};
-  return {
-    eyebrow: safeString(founder.eyebrow) || "About the founder",
-    title: safeString(founder.title),
-    body: safeString(founder.body),
-    image: safeString(founder.image),
-  };
-}
-
-function normalizeHeroSlides(slides) {
-  if (!Array.isArray(slides)) return [];
-  return slides
-    .map((s) => ({
-      mediaType: s?.mediaType === "video" ? "video" : "image",
-      src: safeString(s?.src),
-      alt: safeString(s?.alt),
-    }))
-    .filter((s) => s.src);
-}
-
 export async function getSiteContent(_req, res) {
   const doc = await SiteContent.findOne({ key: "default" }).lean();
   res.json({ success: true, content: doc || null });
@@ -79,8 +58,6 @@ export async function upsertSiteContent(req, res) {
 
   const update = {
     about: normalizeAbout(body.about),
-    founder: normalizeFounder(body.founder),
-    homeHeroSlides: normalizeHeroSlides(body.homeHeroSlides),
     contact: normalizeContact(body.contact),
     payment: normalizePayment(body.payment),
     privacy: normalizeLegal(body.privacy),

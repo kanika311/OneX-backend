@@ -4,13 +4,15 @@ import bcrypt from "bcryptjs";
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    number: { type: String, sparse: true, unique: true, trim: true },
     email: { type: String, sparse: true, unique: true, trim: true, lowercase: true },
-    password: { type: String, required: true, minlength: 8, select: false },
-    role: { type: String, enum: ["user", "admin", "super_admin"], default: "user" },
-    isActive: { type: Boolean, default: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    number: { type: String, sparse: true, unique: true, trim: true },
+  
+    password: { type: String, required: true, minlength: 6, select: false },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
+    /** Phone of member who referred this user (10-digit) */
     referredBy: { type: String, trim: true },
+    resetPasswordToken: { type: String, select: false },
+    resetPasswordExpires: { type: Date, select: false },
   },
   { timestamps: true },
 );

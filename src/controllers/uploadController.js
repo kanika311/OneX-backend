@@ -14,16 +14,6 @@ export async function uploadImage(req, res) {
   });
 }
 
-export async function uploadVideo(req, res) {
-  if (!req.file) throw new ApiError(400, "No video file provided");
-  res.status(201).json({
-    success: true,
-    url: publicUploadUrl(req.file.filename, req),
-    path: normalizeImageForStorage(`/uploads/${req.file.filename}`),
-    filename: req.file.filename,
-  });
-}
-
 export async function listMedia(_req, res) {
   const files = await fs.readdir(UPLOAD_DIR);
   const images = [];

@@ -10,7 +10,6 @@ import siteContentRoutes from "./siteContentRoutes.js";
 import testimonialRoutes from "./testimonialRoutes.js";
 import contactInquiryRoutes from "./contactInquiryRoutes.js";
 import newsletterRoutes from "./newsletterRoutes.js";
-import cookieConsentRoutes from "./cookieConsentRoutes.js";
 
 const router = Router();
 
@@ -26,6 +25,5 @@ router.use("/site-content", siteContentRoutes);
 router.use("/testimonials", testimonialRoutes);
 router.use("/contact-inquiries", contactInquiryRoutes);
 router.use("/newsletter", newsletterRoutes);
-router.use("/cookie-consents", cookieConsentRoutes);
 
 export default router;

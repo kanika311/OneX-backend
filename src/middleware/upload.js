@@ -41,16 +41,6 @@ export const imageUpload = multer({
   },
 });
 
-export const videoUpload = multer({
-  storage,
-  limits: { fileSize: 50 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    const ok = /^video\/(mp4|webm|quicktime|x-msvideo)$/.test(file.mimetype);
-    if (!ok) return cb(new Error("Only MP4, WebM, or MOV videos are allowed"));
-    cb(null, true);
-  },
-});
-
 /** @deprecated import from utils/mediaUrl.js — kept for backwards compatibility */
 export function publicUploadUrl(filename, req) {
   return buildPublicUploadUrl(filename, req);
